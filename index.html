@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kids Video Hub</title>
+  <title>Kids TV - for Zain and Hana</title>
   <style>
     :root {
       --primary: #FF4757;
@@ -26,31 +26,43 @@
       color: var(--text);
       padding-bottom: 30px;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
+    /* Header & Subtitle */
     header {
       background-color: var(--card-bg);
-      padding: 12px 16px;
+      padding: 12px 16px 8px 16px;
       position: sticky;
       top: 0;
       z-index: 100;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      text-align: center;
     }
 
     .app-title {
       font-size: 1.4rem;
       font-weight: 800;
       color: var(--primary);
-      text-align: center;
-      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #747d8c;
+      margin-top: 2px;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
     }
 
     .channels-bar {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       overflow-x: auto;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
       scrollbar-width: none;
+      justify-content: center;
     }
 
     .channels-bar::-webkit-scrollbar {
@@ -58,15 +70,12 @@
     }
 
     .channel-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       background: #F1F3F5;
       border: 2px solid transparent;
       padding: 6px 14px;
       border-radius: 20px;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       color: var(--text);
       cursor: pointer;
       white-space: nowrap;
@@ -79,11 +88,12 @@
       color: var(--secondary);
     }
 
+    /* Top Mode Switcher */
     .type-switcher {
       display: flex;
       justify-content: center;
       gap: 12px;
-      margin: 16px;
+      margin: 14px 16px;
     }
 
     .type-btn {
@@ -92,7 +102,7 @@
       padding: 10px 16px;
       border: none;
       border-radius: 12px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
       background: #E4E6EB;
       color: var(--text);
@@ -109,6 +119,7 @@
       box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
     }
 
+    /* Video Grid */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -119,7 +130,7 @@
     }
 
     .video-grid.shorts-mode {
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 12px;
     }
 
@@ -133,7 +144,7 @@
     }
 
     .video-card:active {
-      transform: scale(0.98);
+      transform: scale(0.97);
     }
 
     .thumbnail-container {
@@ -157,11 +168,11 @@
     }
 
     .video-info {
-      padding: 12px;
+      padding: 10px;
     }
 
     .video-title {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 700;
       line-height: 1.3;
       display: -webkit-box;
@@ -170,13 +181,14 @@
       overflow: hidden;
     }
 
+    /* Standard Player Overlay (for regular videos) */
     .player-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.92);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -189,7 +201,7 @@
     }
 
     .close-btn {
-      position: absolute;
+      position: fixed;
       top: 16px;
       right: 16px;
       background: var(--primary);
@@ -198,25 +210,53 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: bold;
       cursor: pointer;
-      z-index: 1001;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 2001;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
 
     .iframe-wrapper {
-      width: 90%;
+      width: 92%;
       max-width: 900px;
       aspect-ratio: 16 / 9;
       border-radius: 12px;
       overflow: hidden;
     }
 
-    .iframe-wrapper.shorts-aspect {
-      max-width: 380px;
-      aspect-ratio: 9 / 16;
-      height: 80vh;
+    /* Vertical Fullscreen Shorts Reel Overlay */
+    .shorts-reel-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      display: none;
+      z-index: 2000;
+      touch-action: none;
+    }
+
+    .shorts-reel-modal.active {
+      display: block;
+    }
+
+    .shorts-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .shorts-iframe-box {
+      width: 100%;
+      height: 100%;
+      max-width: 420px;
+      position: relative;
     }
 
     iframe {
@@ -225,10 +265,24 @@
       border: none;
     }
 
+    .swipe-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
     .message-box {
       text-align: center;
       padding: 40px 20px;
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #666;
     }
   </style>
@@ -237,56 +291,81 @@
 
   <header>
     <div class="app-title">🎈 Kids TV</div>
+    <div class="subtitle">for Zain and Hana</div>
     <div class="channels-bar" id="channelsBar"></div>
   </header>
 
   <div class="type-switcher">
-    <button class="type-btn active" id="btnVideos" onclick="switchContentType('videos')">🎬 Videos</button>
-    <button class="type-btn" id="btnShorts" onclick="switchContentType('shorts')">📱 Shorts</button>
+    <button class="type-btn active" id="btnVideos" onclick="switchContentType('videos')">🎲 Random Videos</button>
+    <button class="type-btn" id="btnShorts" onclick="switchContentType('shorts')">📱 Random Shorts</button>
   </div>
 
   <main>
     <div class="video-grid" id="videoGrid"></div>
   </main>
 
+  <!-- Standard Video Player Modal -->
   <div class="player-modal" id="playerModal">
     <button class="close-btn" onclick="closePlayer()">✕</button>
-    <div class="iframe-wrapper" id="iframeWrapper">
+    <div class="iframe-wrapper">
       <iframe id="youtubePlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
   </div>
 
+  <!-- Shorts Vertical Swipe Reel Modal -->
+  <div class="shorts-reel-modal" id="shortsReelModal">
+    <button class="close-btn" onclick="closeShortsReel()">✕</button>
+    <div class="shorts-container" id="shortsContainer">
+      <div class="shorts-iframe-box">
+        <iframe id="shortsPlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+      <div class="swipe-hint">↕ Swipe up / down for next short</div>
+    </div>
+  </div>
+
   <script>
+    
     const API_KEY = "AIzaSyBrHB66geVS8bHcwrtvncxrLYVl7C7rH5c";
+
 
     const ALLOWED_CHANNELS = [
       { id: "UCN3WJUfnbKbugSVivFHKIgA", name: "AyoubXAnimation" },
       { id: "UCbCmjCuTUZos6Inko4uObCA", name: "PBS KIDS" },
       { id: "UCpVm7bg6pXKo1Pr6k5kxG9A", name: "Test" }
     ];
-
-    let selectedChannelId = ALLOWED_CHANNELS[0].id;
+    
+    let selectedChannelId = "ALL";
     let contentType = 'videos';
+    let loadedItems = [];
+    let currentShortIndex = 0;
+
+    // Touch Swipe Detection Variables
+    let touchStartY = 0;
+    let touchEndY = 0;
 
     window.onload = () => {
       renderChannelTabs();
-      fetchVideos();
+      fetchRandomFeed();
+      setupSwipeListeners();
     };
 
     function renderChannelTabs() {
       const bar = document.getElementById('channelsBar');
-      bar.innerHTML = ALLOWED_CHANNELS.map(ch => `
-        <button class="channel-btn ${ch.id === selectedChannelId ? 'active' : ''}" 
-                onclick="selectChannel('${ch.id}')">
+      let html = `<button class="channel-btn ${selectedChannelId === 'ALL' ? 'active' : ''}" onclick="selectChannel('ALL')">✨ All Channels</button>`;
+      
+      html += ALLOWED_CHANNELS.map(ch => `
+        <button class="channel-btn ${ch.id === selectedChannelId ? 'active' : ''}" onclick="selectChannel('${ch.id}')">
           <span>${ch.name}</span>
         </button>
       `).join('');
+      
+      bar.innerHTML = html;
     }
 
     function selectChannel(channelId) {
       selectedChannelId = channelId;
       renderChannelTabs();
-      fetchVideos();
+      fetchRandomFeed();
     }
 
     function switchContentType(type) {
@@ -297,49 +376,74 @@
       const grid = document.getElementById('videoGrid');
       grid.classList.toggle('shorts-mode', type === 'shorts');
 
-      fetchVideos();
+      fetchRandomFeed();
     }
 
-    async function fetchVideos() {
+    // Fisher-Yates Randomization Algorithm
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Fetch Videos & Randomize Across Channels
+    async function fetchRandomFeed() {
       const grid = document.getElementById('videoGrid');
-      grid.innerHTML = `<div class="message-box">Loading fun videos... 🚀</div>`;
+      grid.innerHTML = `<div class="message-box">Loading fun content for Zain & Hana... 🚀</div>`;
 
       if (API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") {
         grid.innerHTML = `<div class="message-box">⚠️ Please set your YouTube API Key in the code!</div>`;
         return;
       }
 
-      // Convert Channel ID (UC...) to Uploads Playlist ID (UU...)
-      const playlistId = selectedChannelId.replace(/^UC/, 'UU');
+      const channelsToFetch = selectedChannelId === 'ALL' 
+        ? ALLOWED_CHANNELS 
+        : ALLOWED_CHANNELS.filter(c => c.id === selectedChannelId);
 
-      const url = `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${playlistId}&part=snippet&maxResults=20`;
+      let allFetchedVideos = [];
 
       try {
-        const response = await fetch(url);
-        const data = await response.json();
+        const fetchPromises = channelsToFetch.map(async (channel) => {
+          const playlistId = channel.id.replace(/^UC/, 'UU');
+          const url = `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${playlistId}&part=snippet&maxResults=30`;
+          
+          const response = await fetch(url);
+          const data = await response.json();
+          return data.items || [];
+        });
 
-        if (!data.items || data.items.length === 0) {
+        const results = await Promise.all(fetchPromises);
+        results.forEach(items => {
+          allFetchedVideos = allFetchedVideos.concat(items);
+        });
+
+        if (allFetchedVideos.length === 0) {
           grid.innerHTML = `<div class="message-box">No videos found! 🎈</div>`;
           return;
         }
 
-        renderVideoGrid(data.items);
+        // Shuffle all gathered videos randomly
+        loadedItems = shuffleArray(allFetchedVideos);
+        renderVideoGrid(loadedItems);
+
       } catch (err) {
         console.error("Fetch Error:", err);
-        grid.innerHTML = `<div class="message-box">Could not load videos. Try again later.</div>`;
+        grid.innerHTML = `<div class="message-box">Could not load videos. Please try again.</div>`;
       }
     }
 
     function renderVideoGrid(items) {
       const grid = document.getElementById('videoGrid');
       
-      grid.innerHTML = items.map(item => {
+      grid.innerHTML = items.map((item, index) => {
         const videoId = item.snippet.resourceId.videoId;
         const title = item.snippet.title;
         const thumbnail = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url;
 
         return `
-          <div class="video-card" onclick="openPlayer('${videoId}')">
+          <div class="video-card" onclick="handleCardClick(${index}, '${videoId}')">
             <div class="thumbnail-container">
               <img src="${thumbnail}" alt="${title}" loading="lazy">
             </div>
@@ -351,17 +455,18 @@
       }).join('');
     }
 
-    function openPlayer(videoId) {
-      const modal = document.getElementById('playerModal');
-      const wrapper = document.getElementById('iframeWrapper');
-      const player = document.getElementById('youtubePlayer');
-
+    function handleCardClick(index, videoId) {
       if (contentType === 'shorts') {
-        wrapper.classList.add('shorts-aspect');
+        openShortsReel(index);
       } else {
-        wrapper.classList.remove('shorts-aspect');
+        openStandardPlayer(videoId);
       }
+    }
 
+    /* Standard Player Functions */
+    function openStandardPlayer(videoId) {
+      const modal = document.getElementById('playerModal');
+      const player = document.getElementById('youtubePlayer');
       player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
       modal.classList.add('active');
     }
@@ -369,9 +474,85 @@
     function closePlayer() {
       const modal = document.getElementById('playerModal');
       const player = document.getElementById('youtubePlayer');
-
       player.src = '';
       modal.classList.remove('active');
+    }
+
+    /* Shorts Fullscreen Swipe Player Functions */
+    function openShortsReel(startIndex) {
+      currentShortIndex = startIndex;
+      const modal = document.getElementById('shortsReelModal');
+      modal.classList.add('active');
+      loadShortAtCurrentIndex();
+    }
+
+    function loadShortAtCurrentIndex() {
+      if (currentShortIndex < 0) currentShortIndex = 0;
+      if (currentShortIndex >= loadedItems.length) currentShortIndex = loadedItems.length - 1;
+
+      const videoId = loadedItems[currentShortIndex].snippet.resourceId.videoId;
+      const player = document.getElementById('shortsPlayer');
+      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1`;
+    }
+
+    function closeShortsReel() {
+      const modal = document.getElementById('shortsReelModal');
+      const player = document.getElementById('shortsPlayer');
+      player.src = '';
+      modal.classList.remove('active');
+    }
+
+    /* Touch & Keyboard Swipe Handling for Shorts */
+    function setupSwipeListeners() {
+      const container = document.getElementById('shortsReelModal');
+
+      container.addEventListener('touchstart', (e) => {
+        touchStartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      container.addEventListener('touchend', (e) => {
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipeGesture();
+      }, { passive: true });
+
+      // Support Desktop Arrow Keys
+      window.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('shortsReelModal');
+        if (!modal.classList.contains('active')) return;
+
+        if (e.key === 'ArrowDown') {
+          nextShort();
+        } else if (e.key === 'ArrowUp') {
+          prevShort();
+        } else if (e.key === 'Escape') {
+          closeShortsReel();
+        }
+      });
+    }
+
+    function handleSwipeGesture() {
+      const swipeThreshold = 50; // Minimum distance in px to register a swipe
+      const distance = touchStartY - touchEndY;
+
+      if (distance > swipeThreshold) {
+        nextShort(); // Swiped UP -> Next Short
+      } else if (distance < -swipeThreshold) {
+        prevShort(); // Swiped DOWN -> Previous Short
+      }
+    }
+
+    function nextShort() {
+      if (currentShortIndex < loadedItems.length - 1) {
+        currentShortIndex++;
+        loadShortAtCurrentIndex();
+      }
+    }
+
+    function prevShort() {
+      if (currentShortIndex > 0) {
+        currentShortIndex--;
+        loadShortAtCurrentIndex();
+      }
     }
   </script>
 </body>
