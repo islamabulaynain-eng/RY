@@ -235,34 +235,67 @@
       background: #000;
       display: none;
       z-index: 2000;
-      touch-action: none;
     }
 
     .shorts-reel-modal.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .shorts-container {
       width: 100%;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      max-width: 420px;
       position: relative;
+      overflow: hidden;
     }
 
     .shorts-iframe-box {
       width: 100%;
       height: 100%;
-      max-width: 420px;
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
     }
 
-    iframe {
+    /* Transparent Swipe Overlay Fix for Chrome */
+    .swipe-touch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      border: none;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    /* On-Screen Arrow Controls for Easy Mobile Tapping */
+    .shorts-nav-controls {
+      position: absolute;
+      right: 12px;
+      bottom: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 20;
+    }
+
+    .nav-btn {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
     .swipe-hint {
@@ -270,13 +303,14 @@
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.75);
       color: #fff;
-      padding: 6px 16px;
+      padding: 8px 18px;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      z-index: 20;
       pointer-events: none;
-      opacity: 0.8;
     }
 
     .message-box {
@@ -315,31 +349,43 @@
   <!-- Shorts Vertical Swipe Reel Modal -->
   <div class="shorts-reel-modal" id="shortsReelModal">
     <button class="close-btn" onclick="closeShortsReel()">✕</button>
+    
     <div class="shorts-container" id="shortsContainer">
       <div class="shorts-iframe-box">
         <iframe id="shortsPlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
-      <div class="swipe-hint">↕ Swipe up / down for next short</div>
+
+      <!-- Transparent Overlay capturing Touch Swipes in Chrome -->
+      <div class="swipe-touch-overlay" id="swipeTouchOverlay"></div>
+
+      <!-- On-Screen Nav Buttons -->
+      <div class="shorts-nav-controls">
+        <button class="nav-btn" onclick="prevShort()">▲</button>
+        <button class="nav-btn" onclick="nextShort()">▼</button>
+      </div>
+
+      <div class="swipe-hint">↕ Swipe or Tap ▲ ▼ for Next</div>
     </div>
   </div>
 
   <script>
     
+    
     const API_KEY = "AIzaSyBrHB66geVS8bHcwrtvncxrLYVl7C7rH5c";
-
 
     const ALLOWED_CHANNELS = [
       { id: "UCN3WJUfnbKbugSVivFHKIgA", name: "AyoubXAnimation" },
       { id: "UCbCmjCuTUZos6Inko4uObCA", name: "PBS KIDS" },
       { id: "UCpVm7bg6pXKo1Pr6k5kxG9A", name: "Test" }
     ];
+
     
     let selectedChannelId = "ALL";
     let contentType = 'videos';
     let loadedItems = [];
     let currentShortIndex = 0;
 
-    // Touch Swipe Detection Variables
+    // Touch & Mouse Swipe Detection Variables
     let touchStartY = 0;
     let touchEndY = 0;
 
@@ -502,20 +548,30 @@
       modal.classList.remove('active');
     }
 
-    /* Touch & Keyboard Swipe Handling for Shorts */
+    /* Touch & Mouse Gesture Swipe Handling for Chrome */
     function setupSwipeListeners() {
-      const container = document.getElementById('shortsReelModal');
+      const overlay = document.getElementById('swipeTouchOverlay');
 
-      container.addEventListener('touchstart', (e) => {
+      overlay.addEventListener('touchstart', (e) => {
         touchStartY = e.changedTouches[0].screenY;
       }, { passive: true });
 
-      container.addEventListener('touchend', (e) => {
+      overlay.addEventListener('touchend', (e) => {
         touchEndY = e.changedTouches[0].screenY;
         handleSwipeGesture();
       }, { passive: true });
 
-      // Support Desktop Arrow Keys
+      // Mouse drag support for desktop Chrome testing
+      overlay.addEventListener('mousedown', (e) => {
+        touchStartY = e.clientY;
+      });
+
+      overlay.addEventListener('mouseup', (e) => {
+        touchEndY = e.clientY;
+        handleSwipeGesture();
+      });
+
+      // Support Keyboard Arrow Keys
       window.addEventListener('keydown', (e) => {
         const modal = document.getElementById('shortsReelModal');
         if (!modal.classList.contains('active')) return;
@@ -531,13 +587,15 @@
     }
 
     function handleSwipeGesture() {
-      const swipeThreshold = 50; // Minimum distance in px to register a swipe
+      const swipeThreshold = 40; // Minimum distance in pixels to count as a swipe
       const distance = touchStartY - touchEndY;
 
-      if (distance > swipeThreshold) {
-        nextShort(); // Swiped UP -> Next Short
-      } else if (distance < -swipeThreshold) {
-        prevShort(); // Swiped DOWN -> Previous Short
+      if (Math.abs(distance) > swipeThreshold) {
+        if (distance > 0) {
+          nextShort(); // Swiped UP -> Next Short
+        } else {
+          prevShort(); // Swiped DOWN -> Previous Short
+        }
       }
     }
 
