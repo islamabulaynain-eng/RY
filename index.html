@@ -32,7 +32,7 @@
     /* Header & Subtitle */
     header {
       background-color: var(--card-bg);
-      padding: 12px 16px 8px 16px;
+      padding: 12px 16px 10px 16px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -56,36 +56,33 @@
       letter-spacing: 0.5px;
     }
 
-    .channels-bar {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      scrollbar-width: none;
-      justify-content: center;
-    }
-
-    .channels-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .channel-btn {
-      background: #F1F3F5;
-      border: 2px solid transparent;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--text);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-
-    .channel-btn.active {
-      background-color: #E8F0FE;
-      border-color: var(--secondary);
+    /* Channel Selector Trigger Button */
+    .channel-selector-btn {
+      background: #E8F0FE;
+      border: 2px solid var(--secondary);
       color: var(--secondary);
+      padding: 6px 16px;
+      border-radius: 24px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(30, 144, 255, 0.15);
+      transition: transform 0.15s ease;
+    }
+
+    .channel-selector-btn:active {
+      transform: scale(0.96);
+    }
+
+    .channel-btn-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #ccc;
     }
 
     /* Top Mode Switcher */
@@ -119,7 +116,7 @@
       box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
     }
 
-    /* Video Grid */
+    /* Video Grid Layout */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -181,7 +178,95 @@
       overflow: hidden;
     }
 
-    /* Standard Player Overlay (for regular videos) */
+    /* Visual Grid Drawer / Modal */
+    .channel-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      padding: 20px;
+    }
+
+    .channel-modal.active {
+      display: flex;
+    }
+
+    .channel-modal-content {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .channel-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .channel-modal-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .channel-grid-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 14px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .channel-grid-item {
+      background: #F8F9FA;
+      border: 2px solid #E9ECEF;
+      border-radius: 16px;
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text);
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .channel-grid-item.active {
+      background-color: #E8F0FE;
+      border-color: var(--secondary);
+      color: var(--secondary);
+    }
+
+    .channel-grid-item:active {
+      transform: scale(0.95);
+    }
+
+    .channel-avatar-img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #DDD;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Standard Player Overlay */
     .player-modal {
       position: fixed;
       top: 0;
@@ -213,7 +298,7 @@
       font-size: 1.5rem;
       font-weight: bold;
       cursor: pointer;
-      z-index: 2001;
+      z-index: 3500;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
 
@@ -262,7 +347,7 @@
       overflow: hidden;
     }
 
-    /* Floating Navigation Controls (Bottom Right) */
+    /* Floating Arrow Controls */
     .shorts-nav-controls {
       position: fixed;
       right: 20px;
@@ -313,17 +398,34 @@
   <header>
     <div class="app-title">🎈 Kids TV</div>
     <div class="subtitle">for Zain and Hana</div>
-    <div class="channels-bar" id="channelsBar"></div>
+    
+    <!-- Channel Selector Trigger -->
+    <button class="channel-selector-btn" onclick="openChannelModal()">
+      <img id="currentChannelAvatar" class="channel-btn-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E90FF'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>" alt="channel avatar">
+      <span id="currentChannelLabel">All Channels</span>
+      <span>▼</span>
+    </button>
   </header>
 
   <div class="type-switcher">
-    <button class="type-btn active" id="btnVideos" onclick="switchContentType('videos')">🎲 Random Videos</button>
+    <button class="type-btn active" id="btnVideos" onclick="switchContentType('videos')">🎬 Random Videos</button>
     <button class="type-btn" id="btnShorts" onclick="switchContentType('shorts')">📱 Random Shorts</button>
   </div>
 
   <main>
     <div class="video-grid" id="videoGrid"></div>
   </main>
+
+  <!-- Channel Grid Drawer / Modal -->
+  <div class="channel-modal" id="channelModal">
+    <div class="channel-modal-content">
+      <div class="channel-modal-header">
+        <div class="channel-modal-title">Select Channel</div>
+        <button class="close-btn" style="position: static; width:36px; height:36px; font-size:1.1rem;" onclick="closeChannelModal()">✕</button>
+      </div>
+      <div class="channel-grid-list" id="channelGridList"></div>
+    </div>
+  </div>
 
   <!-- Standard Video Player Modal -->
   <div class="player-modal" id="playerModal">
@@ -343,7 +445,6 @@
       </div>
     </div>
 
-    <!-- Floating Arrow Controls in Bottom Right Corner -->
     <div class="shorts-nav-controls">
       <button class="nav-btn" onclick="prevShort()">▲</button>
       <button class="nav-btn" onclick="nextShort()">▼</button>
@@ -359,33 +460,97 @@
       { id: "UCpVm7bg6pXKo1Pr6k5kxG9A", name: "Test" }
     ];
 
+
+    const DEFAULT_AVATAR_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E90FF'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    let channelAvatars = {};
     let selectedChannelId = "ALL";
     let contentType = 'videos';
     let loadedItems = [];
     let currentShortIndex = 0;
 
-    window.onload = () => {
-      renderChannelTabs();
+    window.onload = async () => {
+      await fetchChannelAvatars();
+      renderChannelModalList();
       fetchRandomFeed();
       setupKeyboardListeners();
     };
 
-    function renderChannelTabs() {
-      const bar = document.getElementById('channelsBar');
-      let html = `<button class="channel-btn ${selectedChannelId === 'ALL' ? 'active' : ''}" onclick="selectChannel('ALL')">✨ All Channels</button>`;
-      
-      html += ALLOWED_CHANNELS.map(ch => `
-        <button class="channel-btn ${ch.id === selectedChannelId ? 'active' : ''}" onclick="selectChannel('${ch.id}')">
-          <span>${ch.name}</span>
-        </button>
-      `).join('');
-      
-      bar.innerHTML = html;
+    /* Fetch Official Youtube Channel Avatars */
+    async function fetchChannelAvatars() {
+      // Check cache first to save API quota
+      const cached = localStorage.getItem('kids_tv_channel_avatars');
+      if (cached) {
+        try {
+          channelAvatars = JSON.parse(cached);
+        } catch (e) {}
+      }
+
+      const missingChannelIds = ALLOWED_CHANNELS
+        .map(c => c.id)
+        .filter(id => !channelAvatars[id]);
+
+      if (missingChannelIds.length === 0 || API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") return;
+
+      try {
+        const idsParam = missingChannelIds.join(',');
+        const url = `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${idsParam}&part=snippet`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.items) {
+          data.items.forEach(ch => {
+            if (ch.snippet && ch.snippet.thumbnails) {
+              channelAvatars[ch.id] = ch.snippet.thumbnails.default.url;
+            }
+          });
+          localStorage.setItem('kids_tv_channel_avatars', JSON.stringify(channelAvatars));
+        }
+      } catch (err) {
+        console.error("Avatar Fetch Error:", err);
+      }
     }
 
-    function selectChannel(channelId) {
+    /* Channel Selection Modal Handlers */
+    function openChannelModal() {
+      document.getElementById('channelModal').classList.add('active');
+    }
+
+    function closeChannelModal() {
+      document.getElementById('channelModal').classList.remove('active');
+    }
+
+    function renderChannelModalList() {
+      const container = document.getElementById('channelGridList');
+      
+      let html = `
+        <div class="channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}" onclick="selectChannel('ALL', 'All Channels', '${DEFAULT_AVATAR_SVG}')">
+          <img class="channel-avatar-img" src="${DEFAULT_AVATAR_SVG}" alt="All Channels">
+          <span>All Channels</span>
+        </div>
+      `;
+
+      html += ALLOWED_CHANNELS.map(ch => {
+        const avatarUrl = channelAvatars[ch.id] || DEFAULT_AVATAR_SVG;
+        return `
+          <div class="channel-grid-item ${ch.id === selectedChannelId ? 'active' : ''}" onclick="selectChannel('${ch.id}', '${ch.name}', '${avatarUrl}')">
+            <img class="channel-avatar-img" src="${avatarUrl}" alt="${ch.name}">
+            <span>${ch.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    function selectChannel(channelId, channelName, avatarUrl) {
       selectedChannelId = channelId;
-      renderChannelTabs();
+      document.getElementById('currentChannelLabel').innerText = channelName;
+      document.getElementById('currentChannelAvatar').src = avatarUrl;
+      
+      renderChannelModalList();
+      closeChannelModal();
       fetchRandomFeed();
     }
 
@@ -445,7 +610,6 @@
           return;
         }
 
-        // Shuffle all gathered videos randomly
         loadedItems = shuffleArray(allFetchedVideos);
         renderVideoGrid(loadedItems);
 
@@ -537,7 +701,6 @@
       }
     }
 
-    // Keyboard controls for desktop convenience
     function setupKeyboardListeners() {
       window.addEventListener('keydown', (e) => {
         const modal = document.getElementById('shortsReelModal');
