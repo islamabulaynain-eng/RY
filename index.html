@@ -28,7 +28,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Top Navigation Header */
     header {
       background-color: var(--card-bg);
       padding: 12px 16px;
@@ -46,7 +45,6 @@
       margin-bottom: 12px;
     }
 
-    /* Channel Selector Bar */
     .channels-bar {
       display: flex;
       gap: 12px;
@@ -75,19 +73,12 @@
       transition: all 0.2s ease;
     }
 
-    .channel-btn img {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-    }
-
     .channel-btn.active {
       background-color: #E8F0FE;
       border-color: var(--secondary);
       color: var(--secondary);
     }
 
-    /* Type Switcher (Videos vs Shorts) */
     .type-switcher {
       display: flex;
       justify-content: center;
@@ -118,7 +109,6 @@
       box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
     }
 
-    /* Video Grid Layout */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -128,7 +118,6 @@
       margin: 0 auto;
     }
 
-    /* Vertical Grid for Shorts */
     .video-grid.shorts-mode {
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 12px;
@@ -150,12 +139,12 @@
     .thumbnail-container {
       position: relative;
       width: 100%;
-      padding-top: 56.25%; /* 16:9 aspect ratio */
+      padding-top: 56.25%;
       background-color: #000;
     }
 
     .shorts-mode .thumbnail-container {
-      padding-top: 177.77%; /* 9:16 aspect ratio */
+      padding-top: 177.77%;
     }
 
     .thumbnail-container img {
@@ -181,7 +170,6 @@
       overflow: hidden;
     }
 
-    /* Fullscreen Player Modal */
     .player-modal {
       position: fixed;
       top: 0;
@@ -237,7 +225,6 @@
       border: none;
     }
 
-    /* Empty/Error State */
     .message-box {
       text-align: center;
       padding: 40px 20px;
@@ -262,7 +249,6 @@
     <div class="video-grid" id="videoGrid"></div>
   </main>
 
-  <!-- Player Overlay -->
   <div class="player-modal" id="playerModal">
     <button class="close-btn" onclick="closePlayer()">✕</button>
     <div class="iframe-wrapper" id="iframeWrapper">
@@ -271,30 +257,21 @@
   </div>
 
   <script>
-    // =========================================================
-    // CONFIGURATION: Replace with your actual YouTube API Key
-    // =========================================================
     const API_KEY = "AIzaSyBrHB66geVS8bHcwrtvncxrLYVl7C7rH5c";
 
-    // Add your allowed channels here (Channel Name & YouTube Channel ID)
     const ALLOWED_CHANNELS = [
-      { id: "UCbCmjCuTUZos6Inko4uObCA", name: "PBS KIDS" },
-      { id: "UC4PoiXSY7g12Lv6I6uAAnXA", name: "National Geographic Kids" },
-      { id: "UCL89srqWBqY2f2A7MHOA3Xg", name: "Cocomelon" },
-      { id: "UCwFfQYn3lJ2YV6B3Hq4jD3Q", name: "AyoubXAnimation" }
+      { id: "UCwFfQYn3lJ2YV6B3Hq4jD3Q", name: "AyoubXAnimation" },
+      { id: "UCbCmjCuTUZos6Inko4uObCA", name: "PBS KIDS" }
     ];
 
-    // State Variables
     let selectedChannelId = ALLOWED_CHANNELS[0].id;
-    let contentType = 'videos'; // 'videos' or 'shorts'
+    let contentType = 'videos';
 
-    // Initialize App
     window.onload = () => {
       renderChannelTabs();
       fetchVideos();
     };
 
-    // Render Top Channel Bar
     function renderChannelTabs() {
       const bar = document.getElementById('channelsBar');
       bar.innerHTML = ALLOWED_CHANNELS.map(ch => `
@@ -322,7 +299,6 @@
       fetchVideos();
     }
 
-    // Fetch Videos via YouTube API v3
     async function fetchVideos() {
       const grid = document.getElementById('videoGrid');
       grid.innerHTML = `<div class="message-box">Loading fun videos... 🚀</div>`;
@@ -332,10 +308,10 @@
         return;
       }
 
-      // Max duration for Shorts is ~60 seconds
-      const videoDurationParam = contentType === 'shorts' ? '&videoDuration=short' : '&videoDuration=medium';
+      // Convert Channel ID (UC...) to Uploads Playlist ID (UU...)
+      const playlistId = selectedChannelId.replace(/^UC/, 'UU');
 
-      const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${selectedChannelId}&part=snippet,id&order=date&maxResults=18&type=video${videoDurationParam}`;
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${playlistId}&part=snippet&maxResults=20`;
 
       try {
         const response = await fetch(url);
@@ -353,12 +329,11 @@
       }
     }
 
-    // Display Video Cards
     function renderVideoGrid(items) {
       const grid = document.getElementById('videoGrid');
       
       grid.innerHTML = items.map(item => {
-        const videoId = item.id.videoId;
+        const videoId = item.snippet.resourceId.videoId;
         const title = item.snippet.title;
         const thumbnail = item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url;
 
@@ -375,7 +350,6 @@
       }).join('');
     }
 
-    // Player Overlay Handling
     function openPlayer(videoId) {
       const modal = document.getElementById('playerModal');
       const wrapper = document.getElementById('iframeWrapper');
@@ -387,7 +361,6 @@
         wrapper.classList.remove('shorts-aspect');
       }
 
-      // Rel=0 disables showing unrelated videos after playback
       player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
       modal.classList.add('active');
     }
@@ -396,7 +369,7 @@
       const modal = document.getElementById('playerModal');
       const player = document.getElementById('youtubePlayer');
 
-      player.src = ''; // Stop video playback
+      player.src = '';
       modal.classList.remove('active');
     }
   </script>
