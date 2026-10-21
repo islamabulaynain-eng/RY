@@ -476,14 +476,20 @@
       setupKeyboardListeners();
     };
 
-    /* Fetch Official Youtube Channel Avatars */
+    /* Fetch Official Youtube Channel Avatars (Cache Auto-Clears on List Change) */
     async function fetchChannelAvatars() {
-      // Check cache first to save API quota
-      const cached = localStorage.getItem('kids_tv_channel_avatars');
-      if (cached) {
-        try {
-          channelAvatars = JSON.parse(cached);
-        } catch (e) {}
+      const currentListHash = ALLOWED_CHANNELS.map(c => c.id).sort().join(',');
+      const savedHash = localStorage.getItem('kids_tv_channels_hash');
+
+      if (savedHash !== currentListHash) {
+        localStorage.removeItem('kids_tv_channel_avatars');
+        localStorage.setItem('kids_tv_channels_hash', currentListHash);
+        channelAvatars = {};
+      } else {
+        const cached = localStorage.getItem('kids_tv_channel_avatars');
+        if (cached) {
+          try { channelAvatars = JSON.parse(cached); } catch (e) {}
+        }
       }
 
       const missingChannelIds = ALLOWED_CHANNELS
@@ -525,7 +531,8 @@
       const container = document.getElementById('channelGridList');
       
       let html = `
-        <div class="channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}" onclick="selectChannel('ALL', 'All Channels', '${DEFAULT_AVATAR_SVG}')">
+        <div class="channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}" 
+             onclick="selectChannel('ALL', 'All Channels', '${DEFAULT_AVATAR_SVG}')">
           <img class="channel-avatar-img" src="${DEFAULT_AVATAR_SVG}" alt="All Channels">
           <span>All Channels</span>
         </div>
@@ -533,9 +540,11 @@
 
       html += ALLOWED_CHANNELS.map(ch => {
         const avatarUrl = channelAvatars[ch.id] || DEFAULT_AVATAR_SVG;
+        const safeName = ch.name.replace(/'/g, "\\'");
         return `
-          <div class="channel-grid-item ${ch.id === selectedChannelId ? 'active' : ''}" onclick="selectChannel('${ch.id}', '${ch.name}', '${avatarUrl}')">
-            <img class="channel-avatar-img" src="${avatarUrl}" alt="${ch.name}">
+          <div class="channel-grid-item ${ch.id === selectedChannelId ? 'active' : ''}" 
+               onclick="selectChannel('${ch.id}', '${safeName}', '${avatarUrl}')">
+            <img class="channel-avatar-img" src="${avatarUrl}" alt="${safeName}">
             <span>${ch.name}</span>
           </div>
         `;
