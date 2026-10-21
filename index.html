@@ -460,7 +460,6 @@
       { id: "UC1FYFqgdW_1LueJTmXn-8cg", name: "OmarDizer" }
     ];
 
-
     const DEFAULT_AVATAR_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E90FF'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
 
     let channelAvatars = {};
@@ -470,36 +469,22 @@
     let currentShortIndex = 0;
 
     window.onload = async () => {
+      // Clear old browser storage to ensure code edits refresh immediately
+      localStorage.removeItem('kids_tv_channel_avatars');
+      localStorage.removeItem('kids_tv_channels_hash');
+
       await fetchChannelAvatars();
       renderChannelModalList();
       fetchRandomFeed();
       setupKeyboardListeners();
     };
 
-    /* Fetch Official Youtube Channel Avatars (Cache Auto-Clears on List Change) */
+    /* Fetch Official Youtube Channel Avatars */
     async function fetchChannelAvatars() {
-      const currentListHash = ALLOWED_CHANNELS.map(c => c.id).sort().join(',');
-      const savedHash = localStorage.getItem('kids_tv_channels_hash');
-
-      if (savedHash !== currentListHash) {
-        localStorage.removeItem('kids_tv_channel_avatars');
-        localStorage.setItem('kids_tv_channels_hash', currentListHash);
-        channelAvatars = {};
-      } else {
-        const cached = localStorage.getItem('kids_tv_channel_avatars');
-        if (cached) {
-          try { channelAvatars = JSON.parse(cached); } catch (e) {}
-        }
-      }
-
-      const missingChannelIds = ALLOWED_CHANNELS
-        .map(c => c.id)
-        .filter(id => !channelAvatars[id]);
-
-      if (missingChannelIds.length === 0 || API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") return;
+      if (ALLOWED_CHANNELS.length === 0 || API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") return;
 
       try {
-        const idsParam = missingChannelIds.join(',');
+        const idsParam = ALLOWED_CHANNELS.map(c => c.id).join(',');
         const url = `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${idsParam}&part=snippet`;
         
         const response = await fetch(url);
@@ -511,7 +496,6 @@
               channelAvatars[ch.id] = ch.snippet.thumbnails.default.url;
             }
           });
-          localStorage.setItem('kids_tv_channel_avatars', JSON.stringify(channelAvatars));
         }
       } catch (err) {
         console.error("Avatar Fetch Error:", err);
@@ -529,33 +513,42 @@
 
     function renderChannelModalList() {
       const container = document.getElementById('channelGridList');
-      
-      let html = `
-        <div class="channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}" 
-             onclick="selectChannel('ALL', 'All Channels', '${DEFAULT_AVATAR_SVG}')">
-          <img class="channel-avatar-img" src="${DEFAULT_AVATAR_SVG}" alt="All Channels">
-          <span>All Channels</span>
-        </div>
+      container.innerHTML = ''; // Reset modal content
+
+      // 1. Create 'All Channels' Card
+      const allCard = document.createElement('div');
+      allCard.className = `channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}`;
+      allCard.innerHTML = `
+        <img class="channel-avatar-img" src="${DEFAULT_AVATAR_SVG}" alt="All Channels">
+        <span>All Channels</span>
       `;
+      allCard.addEventListener('click', () => {
+        selectChannel('ALL', 'All Channels', DEFAULT_AVATAR_SVG);
+      });
+      container.appendChild(allCard);
 
-      html += ALLOWED_CHANNELS.map(ch => {
+      // 2. Create Individual Channel Cards
+      ALLOWED_CHANNELS.forEach(ch => {
         const avatarUrl = channelAvatars[ch.id] || DEFAULT_AVATAR_SVG;
-        const safeName = ch.name.replace(/'/g, "\\'");
-        return `
-          <div class="channel-grid-item ${ch.id === selectedChannelId ? 'active' : ''}" 
-               onclick="selectChannel('${ch.id}', '${safeName}', '${avatarUrl}')">
-            <img class="channel-avatar-img" src="${avatarUrl}" alt="${safeName}">
-            <span>${ch.name}</span>
-          </div>
+        const card = document.createElement('div');
+        card.className = `channel-grid-item ${ch.id === selectedChannelId ? 'active' : ''}`;
+        card.innerHTML = `
+          <img class="channel-avatar-img" src="${avatarUrl}" alt="Channel avatar">
+          <span></span>
         `;
-      }).join('');
+        card.querySelector('span').textContent = ch.name;
 
-      container.innerHTML = html;
+        card.addEventListener('click', () => {
+          selectChannel(ch.id, ch.name, avatarUrl);
+        });
+
+        container.appendChild(card);
+      });
     }
 
     function selectChannel(channelId, channelName, avatarUrl) {
       selectedChannelId = channelId;
-      document.getElementById('currentChannelLabel').innerText = channelName;
+      document.getElementById('currentChannelLabel').textContent = channelName;
       document.getElementById('currentChannelAvatar').src = avatarUrl;
       
       renderChannelModalList();
@@ -639,7 +632,7 @@
         return `
           <div class="video-card" onclick="handleCardClick(${index}, '${videoId}')">
             <div class="thumbnail-container">
-              <img src="${thumbnail}" alt="${title}" loading="lazy">
+              <img src="${thumbnail}" alt="Thumbnail" loading="lazy">
             </div>
             <div class="video-info">
               <div class="video-title">${title}</div>
