@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Permanent Cache Prevention Headers -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <title>Kids TV - for Zain and Hana</title>
   <style>
     :root {
@@ -469,9 +474,11 @@
     let currentShortIndex = 0;
 
     window.onload = async () => {
-      // Clear old browser storage to ensure code edits refresh immediately
-      localStorage.removeItem('kids_tv_channel_avatars');
-      localStorage.removeItem('kids_tv_channels_hash');
+      // Force clear any leftover browser local storage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
 
       await fetchChannelAvatars();
       renderChannelModalList();
@@ -479,15 +486,17 @@
       setupKeyboardListeners();
     };
 
-    /* Fetch Official Youtube Channel Avatars */
+    /* Fetch Official Youtube Channel Avatars with Cache-Busting Parameter */
     async function fetchChannelAvatars() {
       if (ALLOWED_CHANNELS.length === 0 || API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") return;
 
       try {
         const idsParam = ALLOWED_CHANNELS.map(c => c.id).join(',');
-        const url = `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${idsParam}&part=snippet`;
+        // Appending Date.now() ensures Google's API response is never cached by browser
+        const cacheBuster = Date.now();
+        const url = `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${idsParam}&part=snippet&_cb=${cacheBuster}`;
         
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: 'no-store' });
         const data = await response.json();
 
         if (data.items) {
@@ -513,7 +522,7 @@
 
     function renderChannelModalList() {
       const container = document.getElementById('channelGridList');
-      container.innerHTML = ''; // Reset modal content
+      container.innerHTML = '';
 
       // 1. Create 'All Channels' Card
       const allCard = document.createElement('div');
@@ -576,7 +585,7 @@
       return array;
     }
 
-    // Fetch Videos & Randomize Across Channels
+    // Fetch Videos & Randomize Across Channels with Cache-Busting
     async function fetchRandomFeed() {
       const grid = document.getElementById('videoGrid');
       grid.innerHTML = `<div class="message-box">Loading fun content for Zain & Hana... 🚀</div>`;
@@ -595,9 +604,10 @@
       try {
         const fetchPromises = channelsToFetch.map(async (channel) => {
           const playlistId = channel.id.replace(/^UC/, 'UU');
-          const url = `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${playlistId}&part=snippet&maxResults=30`;
+          const cacheBuster = Date.now();
+          const url = `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${playlistId}&part=snippet&maxResults=30&_cb=${cacheBuster}`;
           
-          const response = await fetch(url);
+          const response = await fetch(url, { cache: 'no-store' });
           const data = await response.json();
           return data.items || [];
         });
