@@ -308,11 +308,13 @@
     }
 
     .iframe-wrapper {
+      position: relative;
       width: 92%;
       max-width: 900px;
       aspect-ratio: 16 / 9;
       border-radius: 12px;
       overflow: hidden;
+      background: #000;
     }
 
     /* Centered Vertical Fullscreen Shorts Overlay */
@@ -345,11 +347,25 @@
     }
 
     .shorts-iframe-box {
+      position: relative;
       width: 100%;
       height: 100%;
       aspect-ratio: 9 / 16;
       border-radius: 16px;
       overflow: hidden;
+      background: #000;
+    }
+
+    /* Transparent Click-Shields to Prevent Header/Redirect Taps */
+    .player-shield-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 65px;
+      z-index: 15;
+      background: transparent;
+      pointer-events: auto;
     }
 
     /* Floating Arrow Controls */
@@ -436,12 +452,14 @@
   <div class="player-modal" id="playerModal">
     <button class="close-btn" onclick="closePlayer()">✕</button>
     <div class="iframe-wrapper">
-    <iframe 
-      id="youtubePlayer" 
-      sandbox="allow-scripts allow-same-origin allow-presentation" 
-      allow="autoplay; encrypted-media" 
-      allowfullscreen>
-    </iframe>
+      <!-- Shield stops taps on YouTube channel icon/title redirectors -->
+      <div class="player-shield-top"></div>
+      <iframe 
+        id="youtubePlayer" 
+        sandbox="allow-scripts allow-same-origin allow-presentation"
+        allow="autoplay; encrypted-media" 
+        allowfullscreen>
+      </iframe>
     </div>
   </div>
 
@@ -451,12 +469,14 @@
     
     <div class="shorts-container">
       <div class="shorts-iframe-box">
-      <iframe 
-        id="shortsPlayer" 
-        sandbox="allow-scripts allow-same-origin allow-presentation" 
-        allow="autoplay; encrypted-media" 
-        allowfullscreen>
-      </iframe>
+        <!-- Shield stops taps on top overlay links in shorts -->
+        <div class="player-shield-top"></div>
+        <iframe 
+          id="shortsPlayer" 
+          sandbox="allow-scripts allow-same-origin allow-presentation"
+          allow="autoplay; encrypted-media" 
+          allowfullscreen>
+        </iframe>
       </div>
     </div>
 
@@ -508,8 +528,18 @@
     let loadedItems = [];
     let currentShortIndex = 0;
 
+    // Prevent iframe break-outs from unloading the main page
+    window.addEventListener('beforeunload', (e) => {
+      const isPlayerOpen = document.getElementById('playerModal').classList.contains('active') ||
+                           document.getElementById('shortsReelModal').classList.contains('active');
+      if (isPlayerOpen) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
+
     window.onload = async () => {
-      // Force clear any leftover browser local storage
       try {
         localStorage.clear();
         sessionStorage.clear();
@@ -527,7 +557,6 @@
 
       try {
         const idsParam = ALLOWED_CHANNELS.map(c => c.id).join(',');
-        // Appending Date.now() ensures Google's API response is never cached by browser
         const cacheBuster = Date.now();
         const url = `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${idsParam}&part=snippet&_cb=${cacheBuster}`;
         
@@ -559,7 +588,6 @@
       const container = document.getElementById('channelGridList');
       container.innerHTML = '';
 
-      // 1. Create 'All Channels' Card
       const allCard = document.createElement('div');
       allCard.className = `channel-grid-item ${selectedChannelId === 'ALL' ? 'active' : ''}`;
       allCard.innerHTML = `
@@ -571,7 +599,6 @@
       });
       container.appendChild(allCard);
 
-      // 2. Create Individual Channel Cards
       ALLOWED_CHANNELS.forEach(ch => {
         const avatarUrl = channelAvatars[ch.id] || DEFAULT_AVATAR_SVG;
         const card = document.createElement('div');
@@ -611,7 +638,6 @@
       fetchRandomFeed();
     }
 
-    // Fisher-Yates Randomization Algorithm
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -620,7 +646,6 @@
       return array;
     }
 
-    // Fetch Videos & Randomize Across Channels with Cache-Busting
     async function fetchRandomFeed() {
       const grid = document.getElementById('videoGrid');
       grid.innerHTML = `<div class="message-box">Loading fun content for Zain & Hana... 🚀</div>`;
@@ -699,19 +724,10 @@
     function openStandardPlayer(videoId) {
       const modal = document.getElementById('playerModal');
       const player = document.getElementById('youtubePlayer');
-      // Use youtube-nocookie and lock down controls
+      
+      // Privacy-enhanced domain + restricted parameters
       player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
       modal.classList.add('active');
-    }
-    
-    /* Shorts Fullscreen Player Functions */
-    function loadShortAtCurrentIndex() {
-      if (currentShortIndex < 0) currentShortIndex = 0;
-      if (currentShortIndex >= loadedItems.length) currentShortIndex = loadedItems.length - 1;
-    
-      const videoId = loadedItems[currentShortIndex].snippet.resourceId.videoId;
-      const player = document.getElementById('shortsPlayer');
-      player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}&playsinline=1&enablejsapi=1`;
     }
 
     function closePlayer() {
@@ -729,6 +745,16 @@
       loadShortAtCurrentIndex();
     }
 
+    function loadShortAtCurrentIndex() {
+      if (currentShortIndex < 0) currentShortIndex = 0;
+      if (currentShortIndex >= loadedItems.length) currentShortIndex = loadedItems.length - 1;
+
+      const videoId = loadedItems[currentShortIndex].snippet.resourceId.videoId;
+      const player = document.getElementById('shortsPlayer');
+      
+      // Privacy-enhanced domain + restricted parameters + loop
+      player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}&playsinline=1&enablejsapi=1`;
+    }
 
     function closeShortsReel() {
       const modal = document.getElementById('shortsReelModal');
@@ -765,19 +791,6 @@
         }
       });
     }
-    // Trap navigation attempts out of this page
-    window.addEventListener('beforeunload', (e) => {
-      // If the standard or shorts modal is open, prevent leaving
-      const isVideoPlaying = 
-        document.getElementById('playerModal')?.classList.contains('active') ||
-        document.getElementById('shortsReelModal')?.classList.contains('active');
-    
-      if (isVideoPlaying) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    });
   </script>
 </body>
 </html>
