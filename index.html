@@ -436,7 +436,12 @@
   <div class="player-modal" id="playerModal">
     <button class="close-btn" onclick="closePlayer()">✕</button>
     <div class="iframe-wrapper">
-      <iframe id="youtubePlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <iframe 
+      id="youtubePlayer" 
+      sandbox="allow-scripts allow-same-origin allow-presentation" 
+      allow="autoplay; encrypted-media" 
+      allowfullscreen>
+    </iframe>
     </div>
   </div>
 
@@ -446,7 +451,12 @@
     
     <div class="shorts-container">
       <div class="shorts-iframe-box">
-        <iframe id="shortsPlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      <iframe 
+        id="shortsPlayer" 
+        sandbox="allow-scripts allow-same-origin allow-presentation" 
+        allow="autoplay; encrypted-media" 
+        allowfullscreen>
+      </iframe>
       </div>
     </div>
 
@@ -690,8 +700,19 @@
     function openStandardPlayer(videoId) {
       const modal = document.getElementById('playerModal');
       const player = document.getElementById('youtubePlayer');
-      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+      // Use youtube-nocookie and lock down controls
+      player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
       modal.classList.add('active');
+    }
+    
+    /* Shorts Fullscreen Player Functions */
+    function loadShortAtCurrentIndex() {
+      if (currentShortIndex < 0) currentShortIndex = 0;
+      if (currentShortIndex >= loadedItems.length) currentShortIndex = loadedItems.length - 1;
+    
+      const videoId = loadedItems[currentShortIndex].snippet.resourceId.videoId;
+      const player = document.getElementById('shortsPlayer');
+      player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}&playsinline=1&enablejsapi=1`;
     }
 
     function closePlayer() {
@@ -709,14 +730,6 @@
       loadShortAtCurrentIndex();
     }
 
-    function loadShortAtCurrentIndex() {
-      if (currentShortIndex < 0) currentShortIndex = 0;
-      if (currentShortIndex >= loadedItems.length) currentShortIndex = loadedItems.length - 1;
-
-      const videoId = loadedItems[currentShortIndex].snippet.resourceId.videoId;
-      const player = document.getElementById('shortsPlayer');
-      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1`;
-    }
 
     function closeShortsReel() {
       const modal = document.getElementById('shortsReelModal');
@@ -753,6 +766,19 @@
         }
       });
     }
+    // Trap navigation attempts out of this page
+    window.addEventListener('beforeunload', (e) => {
+      // If the standard or shorts modal is open, prevent leaving
+      const isVideoPlaying = 
+        document.getElementById('playerModal')?.classList.contains('active') ||
+        document.getElementById('shortsReelModal')?.classList.contains('active');
+    
+      if (isVideoPlaying) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
   </script>
 </body>
 </html>
